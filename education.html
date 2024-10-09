@@ -1,0 +1,1090 @@
+<html><head><base href=""><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Education Management System</title><script src="https://cdn.tailwindcss.com"></script><script src="https://unpkg.com/react@17/umd/react.development.js"></script><script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script><script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script></head><body class="bg-gray-100">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useContext, createContext } = React;
+
+const AppContext = createContext();
+
+const saveToLocalStorage = (key, value) => {
+  localStorage.setItem(key, JSON.stringify(value));
+};
+
+const getFromLocalStorage = (key, defaultValue) => {
+  const storedValue = localStorage.getItem(key);
+  return storedValue ? JSON.parse(storedValue) : defaultValue;
+};
+
+const initialCourses = [
+  { 
+    id: 1, 
+    title: 'Mathematics 101', 
+    description: 'Introduction to Mathematics', 
+    startDate: '2023-09-01', 
+    endDate: '2023-12-15', 
+    teacher: 'John Doe', 
+    enrolledStudents: [], 
+    grades: {},
+    assignments: [],
+    quizzes: []
+  },
+  { 
+    id: 2, 
+    title: 'English Literature', 
+    description: 'Exploring classic literature', 
+    startDate: '2023-09-01', 
+    endDate: '2023-12-15', 
+    teacher: 'Jane Smith', 
+    enrolledStudents: [], 
+    grades: {},
+    assignments: [],
+    quizzes: []
+  },
+  { 
+    id: 3, 
+    title: 'Computer Science Basics', 
+    description: 'Fundamentals of programming', 
+    startDate: '2023-09-01', 
+    endDate: '2023-12-15', 
+    teacher: 'Bob Johnson', 
+    enrolledStudents: [], 
+    grades: {},
+    assignments: [],
+    quizzes: []
+  },
+];
+
+function App() {
+  const [user, setUser] = useState(getFromLocalStorage('user', null));
+  const [courses, setCourses] = useState(getFromLocalStorage('courses', initialCourses));
+  const [students, setStudents] = useState(getFromLocalStorage('students', [
+    { id: 1, name: 'Alice Brown' },
+    { id: 2, name: 'Charlie Davis' },
+    { id: 3, name: 'Eva White' },
+  ]));
+  const [teachers, setTeachers] = useState(getFromLocalStorage('teachers', [
+    { id: 1, name: 'John Doe' },
+    { id: 2, name: 'Jane Smith' },
+    { id: 3, name: 'Bob Johnson' },
+  ]));
+
+  const [highestCourseId, setHighestCourseId] = useState(getFromLocalStorage('highestCourseId', Math.max(...initialCourses.map(course => course.id))));
+  const [highestTeacherId, setHighestTeacherId] = useState(getFromLocalStorage('highestTeacherId', Math.max(...teachers.map(teacher => teacher.id))));
+  const [highestStudentId, setHighestStudentId] = useState(getFromLocalStorage('highestStudentId', Math.max(...students.map(student => student.id))));
+
+  useEffect(() => {
+    saveToLocalStorage('user', user);
+    saveToLocalStorage('courses', courses);
+    saveToLocalStorage('students', students);
+    saveToLocalStorage('teachers', teachers);
+    saveToLocalStorage('highestCourseId', highestCourseId);
+    saveToLocalStorage('highestTeacherId', highestTeacherId);
+    saveToLocalStorage('highestStudentId', highestStudentId);
+  }, [user, courses, students, teachers, highestCourseId, highestTeacherId, highestStudentId]);
+
+  return (
+    <AppContext.Provider value={{ 
+      user, 
+      setUser, 
+      courses, 
+      setCourses, 
+      students, 
+      setStudents, 
+      teachers, 
+      setTeachers,
+      highestCourseId,
+      setHighestCourseId,
+      highestTeacherId,
+      setHighestTeacherId,
+      highestStudentId,
+      setHighestStudentId
+    }}>
+      {user ? (
+        user.role === 'admin' ? (
+          <AdminDashboard setUser={setUser} />
+        ) : user.role === 'teacher' ? (
+          <TeacherDashboard name={user.name} setUser={setUser} />
+        ) : (
+          <StudentDashboard name={user.name} setUser={setUser} />
+        )
+      ) : (
+        <Login setUser={setUser} />
+      )}
+    </AppContext.Provider>
+  );
+}
+
+function Login({ setUser }) {
+  const [role, setRole] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+  const [password, setPassword] = useState('');
+  const { teachers, students } = useContext(AppContext);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (role === 'admin' && password === 'admin') {
+      setUser({ role: 'admin' });
+    } else if (role === 'teacher' && password === 'teacher') {
+      setUser({ role: 'teacher', name: selectedUser });
+    } else if (role === 'student' && password === 'student') {
+      setUser({ role: 'student', name: selectedUser });
+    } else {
+      alert('Invalid credentials');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="role" className="sr-only">
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+              </select>
+            </div>
+            {role === 'teacher' && (
+              <div>
+                <label htmlFor="teacher" className="sr-only">
+                  Teacher
+                </label>
+                <select
+                  id="teacher"
+                  name="teacher"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  value={selectedUser}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                >
+                  <option value="">Select Teacher</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.name}>
+                      {teacher.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {role === 'student' && (
+              <div>
+                <label htmlFor="student" className="sr-only">
+                  Student
+                </label>
+                <select
+                  id="student"
+                  name="student"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  value={selectedUser}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                >
+                  <option value="">Select Student</option>
+                  {students.map((student) => (
+                    <option key={student.id} value={student.name}>
+                      {student.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Table({ data, columns, onEdit, onDelete }) {
+  const [sortColumn, setSortColumn] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
+
+  const handleSort = (column) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedData = [...data].sort((a, b) => {
+    if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1;
+    if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  return (
+    <table className="min-w-full divide-y divide-gray-200">
+      <thead className="bg-gray-50">
+        <tr>
+          {columns.map((column) => (
+            <th
+              key={column.key}
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort(column.key)}
+            >
+              {column.label}
+              {sortColumn === column.key && (
+                <span className="ml-2">
+                  {sortDirection === 'asc' ? '▲' : '▼'}
+                </span>
+              )}
+            </th>
+          ))}
+          <th scope="col" className="relative px-6 py-3">
+            <span className="sr-only">Actions</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {sortedData.map((item) => (
+          <tr key={item.id}>
+            {columns.map((column) => (
+              <td key={column.key} className="px-6 py-4 whitespace-nowrap">
+                {item[column.key]}
+              </td>
+            ))}
+            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button
+                onClick={() => onEdit(item)}
+                className="text-indigo-600 hover:text-indigo-900 mr-2"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onDelete(item.id)}
+                className="text-red-600 hover:text-red-900"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function StudentManagement() {
+  const { students, setStudents, highestStudentId, setHighestStudentId } = useContext(AppContext);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const handleAddStudent = () => {
+    setEditingStudent(null);
+    setShowForm(true);
+  };
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setShowForm(true);
+  };
+
+  const handleDeleteStudent = (id) => {
+    setStudents(students.filter((student) => student.id !== id));
+  };
+
+  const handleSubmitStudent = (e) => {
+    e.preventDefault();
+    const formData = {
+      name: e.target.name.value,
+    };
+
+    if (editingStudent) {
+      setStudents(
+        students.map((student) =>
+          student.id === editingStudent.id ? { ...student, ...formData } : student
+        )
+      );
+    } else {
+      const newId = highestStudentId + 1;
+      setStudents([...students, { ...formData, id: newId }]);
+      setHighestStudentId(newId);
+    }
+    setShowForm(false);
+    setEditingStudent(null);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingStudent(null);
+  };
+
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-4">Student Management</h2>
+      <button
+        onClick={handleAddStudent}
+        className="px-4 py-2 mb-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Add New Student
+      </button>
+      {showForm && (
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold mb-2">
+            {editingStudent ? 'Edit Student' : 'Add New Student'}
+          </h3>
+          <form onSubmit={handleSubmitStudent} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                required
+                defaultValue={editingStudent ? editingStudent.name : ''}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={handleCancelForm}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <Table
+          data={students}
+          columns={columns}
+          onEdit={handleEditStudent}
+          onDelete={handleDeleteStudent}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TeacherManagement() {
+  const { teachers, setTeachers, highestTeacherId, setHighestTeacherId } = useContext(AppContext);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const handleAddTeacher = () => {
+    setEditingTeacher(null);
+    setShowForm(true);
+  };
+
+  const handleEditTeacher = (teacher) => {
+    setEditingTeacher(teacher);
+    setShowForm(true);
+  };
+
+  const handleDeleteTeacher = (id) => {
+    setTeachers(teachers.filter((teacher) => teacher.id !== id));
+  };
+
+  const handleSubmitTeacher = (e) => {
+    e.preventDefault();
+    const formData = {
+      name: e.target.name.value,
+    };
+
+    if (editingTeacher) {
+      setTeachers(
+        teachers.map((teacher) =>
+          teacher.id === editingTeacher.id ? { ...teacher, ...formData } : teacher
+        )
+      );
+    } else {
+      const newId = highestTeacherId + 1;
+      setTeachers([...teachers, { ...formData, id: newId }]);
+      setHighestTeacherId(newId);
+    }
+    setShowForm(false);
+    setEditingTeacher(null);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingTeacher(null);
+  };
+
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-4">Teacher Management</h2>
+      <button
+        onClick={handleAddTeacher}
+        className="px-4 py-2 mb-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Add New Teacher
+      </button>
+      {showForm && (
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold mb-2">
+            {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
+          </h3>
+          <form onSubmit={handleSubmitTeacher} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                required
+                defaultValue={editingTeacher ? editingTeacher.name : ''}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={handleCancelForm}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <Table
+          data={teachers}
+          columns={columns}
+          onEdit={handleEditTeacher}
+          onDelete={handleDeleteTeacher}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ setUser }) {
+  const { 
+    courses, 
+    setCourses, 
+    highestCourseId, 
+    setHighestCourseId, 
+    students,
+    teachers,
+    setTeachers,
+    highestTeacherId,
+    setHighestTeacherId
+  } = useContext(AppContext);
+  const [activeTab, setActiveTab] = useState('courses');
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const handleAddCourse = () => {
+    setEditingCourse(null);
+    setShowForm(true);
+  };
+
+  const handleEditCourse = (course) => {
+    setEditingCourse(course);
+    setShowForm(true);
+  };
+
+  const handleDeleteCourse = (id) => {
+    setCourses(courses.filter((course) => course.id !== id));
+  };
+
+  const handleSubmitCourse = (e) => {
+    e.preventDefault();
+    const formData = {
+      title: e.target.title.value,
+      description: e.target.description.value,
+      startDate: e.target.startDate.value,
+      endDate: e.target.endDate.value,
+      teacher: e.target.teacher.value,
+    };
+
+    if (editingCourse) {
+      setCourses(
+        courses.map((course) =>
+          course.id === editingCourse.id ? { ...course, ...formData } : course
+        )
+      );
+    } else {
+      const newId = highestCourseId + 1;
+      setCourses([...courses, { ...formData, id: newId, enrolledStudents: [], grades: {}, assignments: [], quizzes: [] }]);
+      setHighestCourseId(newId);
+    }
+    setShowForm(false);
+    setEditingCourse(null);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingCourse(null);
+  };
+
+  const courseColumns = [
+    { key: 'id', label: 'ID' },
+    { key: 'title', label: 'Title' },
+    { key: 'description', label: 'Description' },
+    { key: 'startDate', label: 'Start Date' },
+    { key: 'endDate', label: 'End Date' },
+    { key: 'teacher', label: 'Teacher' },
+  ];
+
+  const handleEnrollStudent = (courseId, studentName) => {
+    setCourses(courses.map(course => {
+      if (course.id === courseId) {
+        return {
+          ...course,
+          enrolledStudents: [...course.enrolledStudents, studentName]
+        };
+      }
+      return course;
+    }));
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <button
+          onClick={() => setUser(null)}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          Back to Login
+        </button>
+      </div>
+      <div className="mb-4">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab('courses')}
+            className={`px-3 py-2 font-medium text-sm rounded-md ${
+              activeTab === 'courses'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Courses
+          </button>
+          <button
+            onClick={() => setActiveTab('students')}
+            className={`px-3 py-2 font-medium text-sm rounded-md ${
+              activeTab === 'students'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Students
+          </button>
+          <button
+            onClick={() => setActiveTab('teachers')}
+            className={`px-3 py-2 font-medium text-sm rounded-md ${
+              activeTab === 'teachers'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Teachers
+          </button>
+        </nav>
+      </div>
+      {activeTab === 'courses' && (
+        <div>
+          <div className="mb-4">
+            <button
+              onClick={handleAddCourse}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Add New Course
+            </button>
+          </div>
+          {showForm && (
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold mb-2">
+                {editingCourse ? 'Edit Course' : 'Add New Course'}
+              </h3>
+              <form onSubmit={handleSubmitCourse} className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    id="title"
+                    required
+                    defaultValue={editingCourse ? editingCourse.title : ''}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    id="description"
+                    required
+                    defaultValue={editingCourse ? editingCourse.description : ''}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    id="startDate"
+                    required
+                    defaultValue={editingCourse ? editingCourse.startDate : ''}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    id="endDate"
+                    required
+                    defaultValue={editingCourse ? editingCourse.endDate : ''}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="teacher" className="block text-sm font-medium text-gray-700">
+                    Teacher
+                  </label>
+                  <select
+                    name="teacher"
+                    id="teacher"
+                    required
+                    defaultValue={editingCourse ? editingCourse.teacher : ''}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  >
+                    <option value="">Select Teacher</option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.name}>
+                        {teacher.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleCancelForm}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <Table
+              data={courses}
+              columns={courseColumns}
+              onEdit={handleEditCourse}
+              onDelete={handleDeleteCourse}
+            />
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xl font-semibold mb-2">Enroll Students</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleEnrollStudent(
+                parseInt(e.target.courseId.value),
+                e.target.studentName.value
+              );
+              e.target.reset();
+            }}>
+              <select name="courseId" required className="mr-2 border rounded px-2 py-1">
+                <option value="">Select Course</option>
+                {courses.map(course => (
+                  <option key={course.id} value={course.id}>{course.title}</option>
+                ))}
+              </select>
+              <select name="studentName" required className="mr-2 border rounded px-2 py-1">
+                <option value="">Select Student</option>
+                {students.map(student => (
+                  <option key={student.id} value={student.name}>{student.name}</option>
+                ))}
+              </select>
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Enroll</button>
+            </form>
+          </div>
+        </div>
+      )}
+      {activeTab === 'students' && <StudentManagement />}
+      {activeTab === 'teachers' && <TeacherManagement />}
+    </div>
+  );
+}
+
+function TeacherDashboard({ name, setUser }) {
+  const { courses, setCourses } = useContext(AppContext);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [newAssignment, setNewAssignment] = useState({ title: '', description: '', dueDate: '' });
+  const [newQuiz, setNewQuiz] = useState({ title: '', questions: [] });
+  const [newGrade, setNewGrade] = useState({ studentName: '', assignment: '', grade: '' });
+
+  const teacherCourses = courses.filter((course) => course.teacher === name);
+
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+  };
+
+  const handleAddAssignment = (e) => {
+    e.preventDefault();
+    const updatedCourse = {
+      ...selectedCourse,
+      assignments: [...selectedCourse.assignments, { ...newAssignment, id: Date.now() }]
+    };
+    setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+    setSelectedCourse(updatedCourse);
+    setNewAssignment({ title: '', description: '', dueDate: '' });
+  };
+
+  const handleAddQuiz = (e) => {
+    e.preventDefault();
+    const updatedCourse = {
+      ...selectedCourse,
+      quizzes: [...selectedCourse.quizzes, { ...newQuiz, id: Date.now() }]
+    };
+    setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+    setSelectedCourse(updatedCourse);
+    setNewQuiz({ title: '', questions: [] });
+  };
+
+  const handleAddGrade = (e) => {
+    e.preventDefault();
+    const updatedCourse = {
+      ...selectedCourse,
+      grades: {
+        ...selectedCourse.grades,
+        [newGrade.studentName]: {
+          ...selectedCourse.grades[newGrade.studentName],
+          [newGrade.assignment]: newGrade.grade
+        }
+      }
+    };
+    setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+    setSelectedCourse(updatedCourse);
+    setNewGrade({ studentName: '', assignment: '', grade: '' });
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
+        <button
+          onClick={() => setUser(null)}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          Back to Login
+        </button>
+      </div>
+      <h2 className="text-2xl font-semibold mb-4">Welcome, {name}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="col-span-1">
+          <h3 className="text-xl font-semibold mb-2">Your Courses</h3>
+          <ul className="bg-white shadow overflow-hidden sm:rounded-lg">
+            {teacherCourses.map((course) => (
+              <li
+                key={course.id}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => handleSelectCourse(course)}
+              >
+                {course.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="col-span-2">
+          {selectedCourse ? (
+            <div>
+              <h3 className="text-xl font-semibold mb-2">{selectedCourse.title}</h3>
+              <p>{selectedCourse.description}</p>
+              <p>Start Date: {selectedCourse.startDate}</p>
+              <p>End Date: {selectedCourse.endDate}</p>
+              <h4 className="text-lg font-semibold mt-4 mb-2">Manage Course Content</h4>
+              <form onSubmit={handleAddAssignment} className="mb-4">
+                <h5 className="text-md font-semibold mb-2">Add Assignment</h5>
+                <input
+                  type="text"
+                  placeholder="Assignment Title"
+                  value={newAssignment.title}
+                  onChange={(e) => setNewAssignment({...newAssignment, title: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                />
+                <textarea
+                  placeholder="Assignment Description"
+                  value={newAssignment.description}
+                  onChange={(e) => setNewAssignment({...newAssignment, description: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                />
+                <input
+                  type="date"
+                  value={newAssignment.dueDate}
+                  onChange={(e) => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                />
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Add Assignment</button>
+              </form>
+              <form onSubmit={handleAddQuiz} className="mb-4">
+                <h5 className="text-md font-semibold mb-2">Add Quiz</h5>
+                <input
+                  type="text"
+                  placeholder="Quiz Title"
+                  value={newQuiz.title}
+                  onChange={(e) => setNewQuiz({...newQuiz, title: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                />
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Add Quiz</button>
+              </form>
+              <h4 className="text-lg font-semibold mt-4 mb-2">Student Progress and Grades</h4>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 px-4 py-2">Student</th>
+                    <th className="border border-gray-300 px-4 py-2">Assignment</th>
+                    <th className="border border-gray-300 px-4 py-2">Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(selectedCourse.grades).map(([student, assignments]) => 
+                    Object.entries(assignments).map(([assignment, grade]) => (
+                      <tr key={`${student}-${assignment}`}>
+                        <td className="border border-gray-300 px-4 py-2">{student}</td>
+                        <td className="border border-gray-300 px-4 py-2">{assignment}</td>
+                        <td className="border border-gray-300 px-4 py-2">{grade}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <form onSubmit={handleAddGrade} className="mt-4">
+                <h5 className="text-md font-semibold mb-2">Add Grade</h5>
+                <select
+                  value={newGrade.studentName}
+                  onChange={(e) => setNewGrade({...newGrade, studentName: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                >
+                  <option value="">Select Student</option>
+                  {selectedCourse.enrolledStudents.map((student) => (
+                    <option key={student} value={student}>{student}</option>
+                  ))}
+                </select>
+                <select
+                  value={newGrade.assignment}
+                  onChange={(e) => setNewGrade({...newGrade, assignment: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                >
+                  <option value="">Select Assignment</option>
+                  {selectedCourse.assignments.map((assignment) => (
+                    <option key={assignment.id} value={assignment.title}>{assignment.title}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Grade"
+                  value={newGrade.grade}
+                  onChange={(e) => setNewGrade({...newGrade, grade: e.target.value})}
+                  className="mb-2 w-full border rounded px-2 py-1"
+                />
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Add Grade</button>
+              </form>
+            </div>
+          ) : (
+            <p>Select a course to view details</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentDashboard({ name, setUser }) {
+  const { courses, setCourses } = useContext(AppContext);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [assignmentSubmission, setAssignmentSubmission] = useState({ assignmentId: null, content: '' });
+
+  const studentCourses = courses.filter((course) => course.enrolledStudents.includes(name));
+
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+  };
+
+  const handleSubmitAssignment = (e) => {
+    e.preventDefault();
+    const updatedCourse = {
+      ...selectedCourse,
+      assignments: selectedCourse.assignments.map(assignment => 
+        assignment.id === assignmentSubmission.assignmentId
+          ? { ...assignment, submissions: [...(assignment.submissions || []), { student: name, content: assignmentSubmission.content }] }
+          : assignment
+      )
+    };
+    setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+    setSelectedCourse(updatedCourse);
+    setAssignmentSubmission({ assignmentId: null, content: '' });
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Student Dashboard</h1>
+        <button
+          onClick={() => setUser(null)}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          Back to Login
+        </button>
+      </div>
+      <h2 className="text-2xl font-semibold mb-4">Welcome, {name}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="col-span-1">
+          <h3 className="text-xl font-semibold mb-2">Your Courses</h3>
+          <ul className="bg-white shadow overflow-hidden sm:rounded-lg">
+            {studentCourses.map((course) => (
+              <li
+                key={course.id}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => handleSelectCourse(course)}
+              >
+                {course.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="col-span-2">
+          {selectedCourse ? (
+            <div>
+              <h3 className="text-xl font-semibold mb-2">{selectedCourse.title}</h3>
+              <p>{selectedCourse.description}</p>
+              <p>Start Date: {selectedCourse.startDate}</p>
+              <p>End Date: {selectedCourse.endDate}</p>
+              <h4 className="text-lg font-semibold mt-4 mb-2">Assignments</h4>
+              <ul>
+                {selectedCourse.assignments.map((assignment) => (
+                  <li key={assignment.id} className="mb-2">
+                    <h5 className="font-semibold">{assignment.title}</h5>
+                    <p>{assignment.description}</p>
+                    <p>Due: {assignment.dueDate}</p>
+                    <form onSubmit={handleSubmitAssignment}>
+                      <textarea
+                        value={assignmentSubmission.assignmentId === assignment.id ? assignmentSubmission.content : ''}
+                        onChange={(e) => setAssignmentSubmission({ assignmentId: assignment.id, content: e.target.value })}
+                        className="w-full border rounded px-2 py-1 mt-2"
+                        placeholder="Enter your submission"
+                      />
+                      <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-2">Submit Assignment</button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+              <h4 className="text-lg font-semibold mt-4 mb-2">Your Grades</h4>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 px-4 py-2">Assignment</th>
+                    <th className="border border-gray-300 px-4 py-2">Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(selectedCourse.grades[name] || {}).map(([assignment, grade]) => (
+                    <tr key={assignment}>
+                      <td className="border border-gray-300 px-4 py-2">{assignment}</td>
+                      <td className="border border-gray-300 px-4 py-2">{grade}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>Select a course to view details</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body></html>
